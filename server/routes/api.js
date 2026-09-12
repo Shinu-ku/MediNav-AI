@@ -53,24 +53,64 @@ router.get('/facilities', async (req, res) => res.json({ facilities: await findF
 router.post('/appointments', (req, res) => { const booking = { id: `MN-${Date.now().toString().slice(-6)}`, status: 'Requested — demo booking', ...req.body, createdAt: new Date().toISOString() }; bookings.push(booking); if (process.env.MONGODB_URI) Appointment.create({ patientId: req.body.patientId, facility: req.body.facility, requestedFor: req.body.requestedFor, contact: req.body.contact, details: req.body }).catch(() => {}); res.status(201).json(booking); });
 router.post('/profile', async (req, res) => { if (!process.env.MONGODB_URI) return res.json({ ...req.body, saved: false, mode: 'session only' }); const patient = await Patient.findByIdAndUpdate(req.body.id, req.body, { upsert: true, new: true }); res.json({ ...patient.toObject(), saved: true }); });
 router.post('/handoff', (req, res) => { const { profile = {}, summary = {} } = req.body; const text = `MEDINAV PATIENT HANDOFF\nPatient: ${profile.name || 'Not provided'}\nConcern: ${summary.concern || 'Not captured'}\nUrgency: ${summary.urgency || 'Not assessed'}\nNext action: ${summary.nextAction || 'Continue assessment'}\nMedications: ${(profile.medications || []).join(', ') || 'Not provided'}\nEmergency contact: ${profile.emergencyContact?.name || 'Not provided'}\n\nMediNav is navigation support only, not a diagnosis.`; if (process.env.MONGODB_URI) Handoff.create({ patientId: profile.id, summary, text }).catch(() => {}); res.json({ text }); });
-router.post('/elevenlabs/tool', async (req, res) => {
+function authenticateElevenLabsTool(req, res, next) {
   const authorization = req.get('authorization') || '';
   const suppliedSecret = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
   const expectedSecret = process.env.ELEVENLABS_TOOL_SECRET || '';
   const supplied = Buffer.from(suppliedSecret);
   const expected = Buffer.from(expectedSecret);
   if (!expected.length || supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) return res.status(401).json({ message: 'Unauthorized.' });
+  next();
+}
+
+function validateToolLanguage(params, res) {
+  const language = resolveLanguage(params.language);
+  if (!language) {
+    res.status(400).json({ message: 'language must be one of: en, hi, hinglish.' });
+    return null;
+  }
+  return language;
+}
+
+function triageToolResult(params, language) {
+  const triage = localizeTriage(assessTriage(params.message || ''), language);
+  return { result: { triage, concern: extractConcern(params.message || '') } };
+}
+
+async function facilitiesToolResult(params, language) {
+  return { result: { facilities: await findFacilities(params), guidance: facilityGuidance(language), language } };
+}
+
+function handoffToolResult(params, language) {
+  return { result: buildSummary({ message: params.message, profile: params.profile, triage: params.triage, language }) };
+}
+
+router.post('/elevenlabs/tool', authenticateElevenLabsTool, async (req, res) => {
   const tool = req.body.tool_name || req.body.name || req.body.toolName;
   const params = req.body.parameters || req.body.params || req.body;
-  const language = resolveLanguage(params.language);
-  if (!language) return res.status(400).json({ message: 'language must be one of: en, hi, hinglish.' });
+  const language = validateToolLanguage(params, res);
+  if (!language) return;
   if (tool === 'assess_triage') {
-    const triage = localizeTriage(assessTriage(params.message || ''), language);
-    return res.json({ result: { triage, concern: extractConcern(params.message || '') } });
+    return res.json(triageToolResult(params, language));
   }
-  if (tool === 'find_facilities') return res.json({ result: { facilities: await findFacilities(params), guidance: facilityGuidance(language), language } });
-  if (tool === 'create_handoff') return res.json({ result: buildSummary({ message: params.message, profile: params.profile, triage: params.triage, language }) });
+  if (tool === 'find_facilities') return res.json(await facilitiesToolResult(params, language));
+  if (tool === 'create_handoff') return res.json(handoffToolResult(params, language));
   return res.status(400).json({ message: 'Unsupported tool. Use assess_triage, find_facilities, or create_handoff.' });
+});
+router.post('/elevenlabs/tool/assess-triage', authenticateElevenLabsTool, (req, res) => {
+  const language = validateToolLanguage(req.body, res);
+  if (!language) return;
+  res.json(triageToolResult(req.body, language));
+});
+router.post('/elevenlabs/tool/find-facilities', authenticateElevenLabsTool, async (req, res) => {
+  const language = validateToolLanguage(req.body, res);
+  if (!language) return;
+  res.json(await facilitiesToolResult(req.body, language));
+});
+router.post('/elevenlabs/tool/create-handoff', authenticateElevenLabsTool, (req, res) => {
+  const language = validateToolLanguage(req.body, res);
+  if (!language) return;
+  res.json(handoffToolResult(req.body, language));
 });
 router.post('/voice', async (req, res) => { if (!process.env.ELEVENLABS_API_KEY || !process.env.ELEVENLABS_VOICE_ID) return res.status(503).json({ message: 'ElevenLabs voice is not configured. Browser read-aloud remains available.' }); const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${process.env.ELEVENLABS_VOICE_ID}`, { method: 'POST', headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY, 'content-type': 'application/json', accept: 'audio/mpeg' }, body: JSON.stringify({ text: req.body.text, model_id: 'eleven_multilingual_v2' }) }); if (!response.ok) return res.status(502).json({ message: 'Voice generation failed.' }); res.set('content-type', 'audio/mpeg'); res.send(Buffer.from(await response.arrayBuffer())); });
 export default router;

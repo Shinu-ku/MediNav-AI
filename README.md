@@ -39,4 +39,6 @@ The endpoint accepts the common `tool_name`/`parameters` shape (and retains `nam
 { "tool_name": "create_handoff", "parameters": { "message": "High fever", "profile": { "name": "Patient" }, "triage": { "level": "URGENT", "nextAction": "Urgent clinic" }, "language": "hinglish" } }
 ```
 
+For webhook tools that require a dedicated URL, the same authenticated request bodies can be sent directly to `POST /api/elevenlabs/tool/assess-triage`, `POST /api/elevenlabs/tool/find-facilities`, and `POST /api/elevenlabs/tool/create-handoff`, respectively. These routes return the same `result` JSON as their corresponding generic-tool calls.
+
 Do not expose this endpoint publicly until it is behind HTTPS and the `Authorization` custom header has been configured in ElevenLabs.

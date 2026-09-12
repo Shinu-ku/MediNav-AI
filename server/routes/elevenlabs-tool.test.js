@@ -22,8 +22,8 @@ before(async () => {
 
 after(async () => new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve())));
 
-async function call(body, authorization = 'Bearer test-tool-secret') {
-  const response = await fetch(baseUrl, { method: 'POST', headers: { 'content-type': 'application/json', ...(authorization ? { authorization } : {}) }, body: JSON.stringify(body) });
+async function call(body, authorization = 'Bearer test-tool-secret', path = '') {
+  const response = await fetch(`${baseUrl}${path}`, { method: 'POST', headers: { 'content-type': 'application/json', ...(authorization ? { authorization } : {}) }, body: JSON.stringify(body) });
   return { status: response.status, body: await response.json() };
 }
 
@@ -75,4 +75,34 @@ test('creates a Hindi navigation summary', async () => {
   assert.equal(response.body.result.language, 'hi');
   assert.match(response.body.result.summaryText, /मुख्य चिंता/);
   assert.equal(response.body.result.nextAction, 'तत्काल क्लिनिक या अस्पताल');
+});
+
+test('accepts authenticated requests on the dedicated assess-triage route', async () => {
+  const response = await call({ message: 'I have a high fever', language: 'en' }, 'Bearer test-tool-secret', '/assess-triage');
+  assert.equal(response.status, 200);
+  assert.equal(response.body.result.triage.level, 'URGENT');
+});
+
+test('rejects unauthenticated requests on the dedicated assess-triage route', async () => {
+  const response = await call({ message: 'headache', language: 'en' }, '', '/assess-triage');
+  assert.equal(response.status, 401);
+});
+
+test('classifies Hindi and Hinglish emergency inputs on the dedicated assess-triage route', async () => {
+  const hindi = await call({ message: 'मुझे सीने में बहुत तेज दर्द है और सांस लेने में दिक्कत हो रही है।', language: 'hi' }, 'Bearer test-tool-secret', '/assess-triage');
+  const hinglish = await call({ message: 'Mere chest mein bahut severe pain hai aur breathing mein problem ho rahi hai.', language: 'hinglish' }, 'Bearer test-tool-secret', '/assess-triage');
+  assert.equal(hindi.body.result.triage.level, 'EMERGENCY');
+  assert.equal(hinglish.body.result.triage.level, 'EMERGENCY');
+});
+
+test('accepts authenticated requests on the dedicated find-facilities route', async () => {
+  const response = await call({ lat: 28.6139, lng: 77.209, type: 'hospital', language: 'en' }, 'Bearer test-tool-secret', '/find-facilities');
+  assert.equal(response.status, 200);
+  assert.ok(Array.isArray(response.body.result.facilities));
+});
+
+test('accepts authenticated requests on the dedicated create-handoff route', async () => {
+  const response = await call({ message: 'High fever', profile: { name: 'Patient' }, triage: { level: 'URGENT' }, language: 'hinglish' }, 'Bearer test-tool-secret', '/create-handoff');
+  assert.equal(response.status, 200);
+  assert.equal(response.body.result.language, 'hinglish');
 });
