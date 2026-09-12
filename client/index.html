@@ -93,9 +93,9 @@ h1{font-size:clamp(38px,5vw,62px);line-height:1.01;letter-spacing:-.06em;margin:
 <section class="section" aria-labelledby="quick-title">
  <div class="section-head"><div><h2 class="section-title" id="quick-title">Start with a common concern</h2><p class="section-sub">Demo the complete navigation experience in one tap.</p></div></div>
  <div class="scenarios">
-  <button class="scenario" data-demo="chest"><span class="sicon"><i data-lucide="heart-pulse"></i></span><strong>Chest discomfort</strong><span>Urgent-care conversation and red-flag pathway.</span></button>
-  <button class="scenario" data-demo="fever"><span class="sicon"><i data-lucide="thermometer"></i></span><strong>Fever &amp; weakness</strong><span>Routine-care assessment and nearby options.</span></button>
-  <button class="scenario" data-demo="pain"><span class="sicon"><i data-lucide="bone"></i></span><strong>Persistent pain</strong><span>Primary-care to specialist navigation.</span></button>
+  <button class="scenario" data-concern="I've had chest discomfort and some trouble breathing."><span class="sicon"><i data-lucide="heart-pulse"></i></span><strong>Chest discomfort</strong><span>Urgent-care conversation and red-flag pathway.</span></button>
+  <button class="scenario" data-concern="I've had a fever and weakness since yesterday."><span class="sicon"><i data-lucide="thermometer"></i></span><strong>Fever &amp; weakness</strong><span>Routine-care assessment and nearby options.</span></button>
+  <button class="scenario" data-concern="I've had persistent joint pain for several weeks."><span class="sicon"><i data-lucide="bone"></i></span><strong>Persistent pain</strong><span>Primary-care to specialist navigation.</span></button>
  </div>
 </section>
 
@@ -153,7 +153,7 @@ h1{font-size:clamp(38px,5vw,62px);line-height:1.01;letter-spacing:-.06em;margin:
 </div>
 
 <script src="https://unpkg.com/lucide@latest"></script>
-<script>
+<script type="text/plain" id="retired-demo-conversation">
 const $=s=>document.querySelector(s),messages=$("#messages"),input=$("#input"),status=$("#agentStatus");
 const data={
 chest:{user:"I've had chest discomfort and some trouble breathing.",replies:["I understand. Is the discomfort happening right now?","Are you feeling unusually short of breath, faint, or sweaty?"],urgency:"HIGH PRIORITY",badge:"Urgent",title:"Seek emergency evaluation now",text:"Chest discomfort with breathing difficulty can be serious. This prototype prioritizes urgent evaluation rather than continuing a long assessment.",path:"Emergency evaluation",pathText:"Go to an emergency department or contact local emergency services if symptoms are severe or worsening.",facilities:[["City Emergency Centre","Emergency department · Open now","2.4 km"],["Central Hospital","Emergency department · 24/7","4.1 km"]],concern:"Chest discomfort",duration:"Today",action:"Emergency evaluation",high:true},
@@ -190,5 +190,6 @@ $("#helpBtn").addEventListener("click",()=>{$("#modal").classList.add("open");$(
 $("#langBtn").addEventListener("click",()=>$("#modal").classList.add("open"));$("#closeModal").addEventListener("click",()=>$("#modal").classList.remove("open"));$("#modal").addEventListener("click",e=>{if(e.target.id==="modal")$("#modal").classList.remove("open")});document.querySelectorAll("[data-lang]").forEach(b=>b.addEventListener("click",()=>{profile.language=b.dataset.lang;localStorage.setItem('medinavProfile',JSON.stringify(profile));$("#langBtn").textContent=b.dataset.lang+" ▾";$("#modal").classList.remove("open");toast("Language selected: "+b.dataset.lang)}));
 lucide.createIcons();
 </script>
+<script type="module" src="/src/main.js"></script>
 </body>
 </html>

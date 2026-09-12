@@ -11,6 +11,8 @@ MediNav is a hackathon healthcare-navigation MVP. It supports safety-first sympt
 
 The app starts in useful demo mode when credentials or MongoDB are absent. Google Places, Gemini vision/chat, MongoDB persistence, and ElevenLabs TTS become live when their variables are present. `GEMINI_MODEL` defaults to `gemini-3.6-flash` because the supplied key's Gemini API no longer accepts Gemini 2.5 Flash for new users; it can be changed to another model enabled for the key.
 
+For the live browser voice agent, set `VITE_ELEVENLABS_AGENT_ID` to the public ElevenLabs Agent ID and run `npm start`. This value is an agent identifier, not a secret: never place API keys, webhook credentials, or tool secrets in a `VITE_` variable.
+
 ## Safety
 
 The deterministic triage layer runs before Gemini. It detects prominent emergency phrases and promotes urgent action; generative AI is asked only to organize and communicate care-navigation guidance. It must not diagnose or replace emergency services.
@@ -42,3 +44,9 @@ The endpoint accepts the common `tool_name`/`parameters` shape (and retains `nam
 For webhook tools that require a dedicated URL, the same authenticated request bodies can be sent directly to `POST /api/elevenlabs/tool/assess-triage`, `POST /api/elevenlabs/tool/find-facilities`, and `POST /api/elevenlabs/tool/create-handoff`, respectively. These routes return the same `result` JSON as their corresponding generic-tool calls.
 
 Do not expose this endpoint publicly until it is behind HTTPS and the `Authorization` custom header has been configured in ElevenLabs.
+
+### Live ElevenLabs agent
+
+The plain HTML frontend is bundled with Vite and uses the official `@elevenlabs/client` SDK. The **Talk to MediNav** control requests microphone permission, then starts `Conversation.startSession({ agentId: VITE_ELEVENLABS_AGENT_ID })`; pressing it again ends the session. Text input and common-concern cards send real user messages through `conversation.sendUserMessage()`.
+
+The UI receives transcript, connection, speaking/listening, and tool-response events from the SDK. Enable the corresponding client events in the ElevenLabs agent's Advanced settings. The existing server-side webhook tools—`assess_triage`, `find_facilities`, and `create_handoff`—remain responsible for healthcare actions; their returned results update the existing care cards. Browser `SpeechRecognition` and browser speech synthesis are not part of the live agent path.
