@@ -5,13 +5,17 @@ const demoFacilities = [
 
 export async function findFacilities({ lat, lng, type = 'hospital' }) {
   if (!process.env.GOOGLE_MAPS_API_KEY || !lat || !lng) return demoFacilities;
-  const url = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json');
-  url.search = new URLSearchParams({ location: `${lat},${lng}`, radius: '8000', type, key: process.env.GOOGLE_MAPS_API_KEY });
-  const response = await fetch(url);
+  // Places API (New). Enable "Places API (New)" for the server-side key.
+  const response = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY, 'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.primaryType,places.nationalPhoneNumber,places.googleMapsUri' },
+    body: JSON.stringify({ includedTypes: [type], maxResultCount: 5, locationRestriction: { circle: { center: { latitude: Number(lat), longitude: Number(lng) }, radius: 8000 } } })
+  });
   if (!response.ok) return demoFacilities;
   const data = await response.json();
-  return (data.results || []).slice(0, 5).map((place) => ({
-    name: place.name, type: place.types?.includes('hospital') ? 'Hospital' : 'Healthcare facility', distance: 'Nearby', phone: '',
-    address: place.vicinity || '', mapsUrl: `https://www.google.com/maps/search/?api=1&query_place_id=${place.place_id}&query=${encodeURIComponent(place.name)}`
+  const places = (data.places || []).map((place) => ({
+    name: place.displayName?.text || 'Healthcare facility', type: place.primaryType === 'hospital' ? 'Hospital' : 'Healthcare facility', distance: 'Nearby', phone: place.nationalPhoneNumber || '',
+    address: place.formattedAddress || '', mapsUrl: place.googleMapsUri || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.displayName?.text || 'hospital')}`
   }));
+  return places.length ? places : demoFacilities;
 }

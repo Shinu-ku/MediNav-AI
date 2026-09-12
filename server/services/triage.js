@@ -5,7 +5,10 @@ const EMERGENCY_PATTERNS = [
   /suicid|kill myself|self.?harm/i,
   /severe bleeding|bleeding.*(won't|will not) stop/i,
   /unconscious|passed out|seizure/i,
-  /anaphyla|swelling.*(throat|tongue)/i
+  /anaphyla|swelling.*(throat|tongue)/i,
+  /(chest|seene).*(severe|bahut).*(pain|dard).*(breath|saans)/i,
+  /सीने.*(दर्द|पीड़ा).*(सांस|श्वास)|(सांस|श्वास).*(दिक्कत|परेशानी).*(सीने|छाती).*(दर्द|पीड़ा)/u,
+  /(सीने|छाती).*(बहुत तेज|तेज़).*(दर्द|पीड़ा).*(सांस|श्वास)/u
 ];
 const URGENT_PATTERNS = [/high fever/i, /persistent vomiting/i, /dehydrat/i, /severe.*pain/i, /pregnan.*(pain|bleed)/i, /infection.*worsen/i];
 

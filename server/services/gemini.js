@@ -4,7 +4,11 @@ export async function askGemini({ message, triage, profile, image }) {
   if (!process.env.GEMINI_API_KEY) return null;
   const parts = [{ text: `${systemInstruction}\n\nTRIAGE: ${JSON.stringify(triage)}\nPATIENT CONTEXT: ${JSON.stringify(profile || {})}\nUSER: ${message}` }];
   if (image?.buffer) parts.push({ inline_data: { mime_type: image.mimetype, data: image.buffer.toString('base64') } });
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+  // Gemini 2.5 Flash remains supported for existing projects, but this key's API
+  // response directs new users to 3.6 Flash. Keep the model configurable so a
+  // hackathon team can select an allow-listed model without changing source.
+  const model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', temperature: 0.25 } })
   });
   if (!response.ok) throw new Error(`Gemini request failed (${response.status})`);
