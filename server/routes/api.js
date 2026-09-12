@@ -49,7 +49,7 @@ router.post('/vision/analyze', upload.single('image'), async (req, res) => {
   const answer = analysis || localReply({ message: 'the image you shared', triage });
   res.json({ ...answer, triage, imageReviewed: true, disclaimer: 'Image context cannot diagnose a condition. Seek clinical assessment for concerns.' });
 });
-router.get('/facilities', async (req, res) => res.json({ facilities: await findFacilities(req.query) }));
+router.get('/facilities', async (req, res) => { try { res.json({ facilities: await findFacilities(req.query) }); } catch (error) { res.status(503).json({ message: error.message, facilities: [] }); } });
 router.post('/appointments', (req, res) => { const booking = { id: `MN-${Date.now().toString().slice(-6)}`, status: 'Requested — demo booking', ...req.body, createdAt: new Date().toISOString() }; bookings.push(booking); if (process.env.MONGODB_URI) Appointment.create({ patientId: req.body.patientId, facility: req.body.facility, requestedFor: req.body.requestedFor, contact: req.body.contact, details: req.body }).catch(() => {}); res.status(201).json(booking); });
 router.post('/profile', async (req, res) => { if (!process.env.MONGODB_URI) return res.json({ ...req.body, saved: false, mode: 'session only' }); const patient = await Patient.findByIdAndUpdate(req.body.id, req.body, { upsert: true, new: true }); res.json({ ...patient.toObject(), saved: true }); });
 router.post('/handoff', (req, res) => { const { profile = {}, summary = {} } = req.body; const text = `MEDINAV PATIENT HANDOFF\nPatient: ${profile.name || 'Not provided'}\nConcern: ${summary.concern || 'Not captured'}\nUrgency: ${summary.urgency || 'Not assessed'}\nNext action: ${summary.nextAction || 'Continue assessment'}\nMedications: ${(profile.medications || []).join(', ') || 'Not provided'}\nEmergency contact: ${profile.emergencyContact?.name || 'Not provided'}\n\nMediNav is navigation support only, not a diagnosis.`; if (process.env.MONGODB_URI) Handoff.create({ patientId: profile.id, summary, text }).catch(() => {}); res.json({ text }); });
@@ -78,7 +78,8 @@ function triageToolResult(params, language) {
 }
 
 async function facilitiesToolResult(params, language) {
-  return { result: { facilities: await findFacilities(params), guidance: facilityGuidance(language), language } };
+  try { return { result: { facilities: await findFacilities(params), guidance: facilityGuidance(language), language } }; }
+  catch (error) { return { result: { facilities: [], guidance: facilityGuidance(language), language, error: error.message } }; }
 }
 
 function handoffToolResult(params, language) {

@@ -79,7 +79,7 @@ h1{font-size:clamp(38px,5vw,62px);line-height:1.01;letter-spacing:-.06em;margin:
   <h1 id="hero-title">Tell MediNav what's wrong. We'll help you find the next step.</h1>
   <p>Have a natural conversation about your health concern. MediNav asks what matters, highlights urgency, and helps you navigate to appropriate care.</p>
   <div class="hero-actions">
-   <button class="primary" id="startBtn"><i data-lucide="mic"></i>Talk to MediNav</button>
+   <button class="primary" id="startBtn"><i data-lucide="mic"></i>Talk to MediNav</button><button class="secondary" id="emergencyBtn"><i data-lucide="siren"></i>Emergency</button>
    <button class="secondary" id="textBtn"><i data-lucide="message-square"></i>Start with text</button>
   </div>
   <div class="hero-note">Navigation support, not diagnosis. If you may be experiencing an emergency, contact local emergency services.</div>
@@ -125,7 +125,7 @@ h1{font-size:clamp(38px,5vw,62px);line-height:1.01;letter-spacing:-.06em;margin:
 
    <div class="card"><div class="card-title">Recommended care</div><div class="pathway"><div class="path-icon"><i data-lucide="stethoscope"></i></div><div><strong id="pathTitle">Waiting for your symptoms</strong><p id="pathText">Your recommended care route will appear here.</p></div></div><div class="chips" id="chips"><span class="chip">Questions</span><span class="chip">Context</span><span class="chip">Next step</span></div></div>
 
-   <div class="card"><div class="card-title">Nearby care</div>
+   <div class="card"><div class="card-title">Nearby care</div><div class="card-actions"><button class="secondary" id="locationBtn"><i data-lucide="locate-fixed"></i>Use current location</button><span class="muted" id="locationStatus" role="status">Location not requested</span></div>
     <div class="facility"><div class="fac-icon"><img src="https://images.unsplash.com/photo-1584982751601-97dcc096659c?auto=format&fit=crop&w=120&q=75" alt=""></div><div class="fac-main"><strong id="fac1">Facilities will appear here</strong><p id="fac1p">Complete the check-in first.</p><a id="fac1Actions" hidden>Directions</a></div><span class="distance" id="dist1">—</span></div>
     <div class="facility"><div class="fac-icon"><img src="https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&w=120&q=75" alt=""></div><div class="fac-main"><strong id="fac2">Nearby facilities</strong><p id="fac2p">Matched to your recommended care.</p><a id="fac2Actions" hidden>Directions</a></div><span class="distance" id="dist2">—</span></div>
     <div class="map" aria-label="Map preview"><div class="road r1"></div><div class="road r2"></div><div class="road r3"></div><div class="pin"><i data-lucide="map-pin"></i></div><div class="map-label">Care near you</div></div>
